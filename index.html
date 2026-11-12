@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OS-MPM: Overlapping Schwarz Space-Time Refinement for the Material Point Method</title>
+<meta name="description" content="OS-MPM couples a coarse and a fine material point simulation, each with its own grid and time step, through an overlapping Schwarz iteration. Published in Computational Mechanics (2026).">
+<link rel="canonical" href="https://roushelfy.github.io/OS-MPM/">
+<meta name="theme-color" content="#faf8f3">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="OS-MPM: Overlapping Schwarz Space-Time Refinement for the Material Point Method">
+<meta property="og:description" content="Refine an MPM simulation only where, and when, it is needed. Standard MPM in every subdomain; 4.3 to 9.1 times faster than uniform fine-grid MPM in the elastic-inclusion benchmark.">
+<meta property="og:url" content="https://roushelfy.github.io/OS-MPM/">
+<meta property="og:image" content="https://roushelfy.github.io/OS-MPM/assets/img/social-card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+
+<meta name="citation_title" content="An overlapping Schwarz space-time refinement framework for multi-resolution material point method">
+<meta name="citation_author" content="Luo, Zhaofeng">
+<meta name="citation_author" content="Li, Minchen">
+<meta name="citation_author" content="Jiang, Yupeng">
+<meta name="citation_journal_title" content="Computational Mechanics">
+<meta name="citation_publisher" content="Springer">
+<meta name="citation_publication_date" content="2026/11/11">
+<meta name="citation_doi" content="10.1007/s00466-026-02884-6">
+<meta name="citation_abstract_html_url" content="https://link.springer.com/article/10.1007/s00466-026-02884-6">
+<meta name="citation_pdf_url" content="https://link.springer.com/content/pdf/10.1007/s00466-026-02884-6.pdf">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ScholarlyArticle",
+  "headline": "An overlapping Schwarz space-time refinement framework for multi-resolution material point method",
+  "author": [
+    {"@type": "Person", "name": "Zhaofeng Luo", "affiliation": "Carnegie Mellon University"},
+    {"@type": "Person", "name": "Minchen Li", "affiliation": "Carnegie Mellon University; Genesis AI"},
+    {"@type": "Person", "name": "Yupeng Jiang", "affiliation": "IBNM, Leibniz Universität Hannover", "sameAs": "https://orcid.org/0000-0002-2040-2539"}
+  ],
+  "datePublished": "2026-11-11",
+  "isPartOf": {"@type": "Periodical", "name": "Computational Mechanics", "publisher": "Springer"},
+  "identifier": "https://doi.org/10.1007/s00466-026-02884-6",
+  "license": "https://creativecommons.org/licenses/by/4.0/",
+  "isAccessibleForFree": true
+}
+</script>
+
+<link rel="preload" href="assets/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="nav" id="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="OS-MPM, back to top">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="19" height="19" rx="4" fill="#4a6078"/><rect x="11" y="11" width="19" height="19" rx="4" fill="#3f9160"/><path d="M11 15a4 4 0 0 1 4-4h6v6a4 4 0 0 1-4 4h-6z" fill="#e0932f"/></svg>
+      OS-MPM
+    </a>
+    <nav aria-label="Sections">
+      <a href="#idea">Idea</a>
+      <a href="#method">Method</a>
+      <a href="#results">Results</a>
+      <a href="#scope">Scope</a>
+      <a href="#cite">Cite</a>
+      <a class="btn small primary cta" href="https://doi.org/10.1007/s00466-026-02884-6" target="_blank" rel="noopener">Paper
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 13 13 7M8 7h5v5"/></svg></a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ===================== HERO ===================== -->
+<div class="hero">
+  <div class="wrap">
+    <div class="eyebrow">
+      <span>Computational Mechanics</span><span class="dot"></span><span>2026</span><span class="dot"></span><span class="oa">Open access</span>
+    </div>
+    <h1>An Overlapping Schwarz <span class="nb">Space-Time</span> Refinement Framework for <span class="nb">Multi-Resolution</span> Material Point Method</h1>
+
+    <p class="authors">
+      <span>Zhaofeng Luo<sup>1</sup></span>
+      <span>Minchen Li<sup>1,2,*</sup></span>
+      <span><a href="https://orcid.org/0000-0002-2040-2539" target="_blank" rel="noopener">Yupeng Jiang</a><sup>3,*</sup></span>
+    </p>
+    <p class="affils">
+      <span><sup>1</sup>Carnegie Mellon University</span>
+      <span><sup>2</sup>Genesis AI</span>
+      <span><sup>3</sup>IBNM, Leibniz Universität Hannover</span>
+      <span><sup>*</sup>Corresponding authors</span>
+    </p>
+
+    <div class="actions">
+      <a class="btn primary" href="https://link.springer.com/article/10.1007/s00466-026-02884-6" target="_blank" rel="noopener">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 2.8h7l3.5 3.5v10.9H5z"/><path d="M12 2.8v3.6h3.5M7.6 10.3h5M7.6 13.3h5"/></svg>
+        Read the paper</a>
+      <a class="btn" href="https://link.springer.com/content/pdf/10.1007/s00466-026-02884-6.pdf" target="_blank" rel="noopener">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3v9.5M6 9l4 4 4-4M4 16.5h12"/></svg>
+        PDF</a>
+      <a class="btn" href="#cite">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 6.5C5.6 7.2 4.5 8.800 4.500 11v2.500h3.500V10H6.300c.100-1 .700-1.700 1.700-2.100zM14.500 6.500c-1.900.700-3 2.300-3 4.500v2.500H15V10h-1.700c.100-1 .700-1.700 1.700-2.100z"/></svg>
+        Cite</a>
+    </div>
+
+    <p class="lede"><b>Refine a material point simulation only where, and when, it is needed.</b> OS-MPM couples a coarse background domain and a fine local domain, each with its own grid, particles and time step, through an overlapping Schwarz iteration. Inside each subdomain the solver is standard MPM.</p>
+
+    <figure class="media duo reveal" id="hero-media">
+      <div class="views">
+        <div class="view">
+          <video autoplay muted loop playsinline preload="auto" width="1104" height="832" poster="assets/video/fold-particles-poster.jpg" aria-label="Animation of a plate folding by ninety degrees about a soft hinge, drawn as particles. Coarse-domain particles are slate and fine-domain particles are green; the two background grids are drawn behind.">
+            <source src="assets/video/fold-particles.mp4" type="video/mp4">
+          </video>
+          <span class="view-label">What the solver sees</span>
+        </div>
+        <div class="view">
+          <video autoplay muted loop playsinline preload="auto" width="1104" height="832" poster="assets/video/fold-solid-poster.jpg" aria-label="The same folding motion drawn as a solid body; the soft hinge is amber and the stiff panels are slate.">
+            <source src="assets/video/fold-solid.mp4" type="video/mp4">
+          </video>
+          <span class="view-label">The body it simulates</span>
+        </div>
+      </div>
+      <figcaption class="media-bar">
+        <span class="legend">
+          <span class="key"><i class="c-coarse"></i><span>Coarse-domain particles and grid, h<sub>B</sub> = 1/60 m</span></span>
+          <span class="key"><i class="c-fine"></i><span>Fine-domain particles and grid, h<sub>S</sub> = 1/120 m</span></span>
+          <span class="key"><i class="c-hinge"></i><span>Soft hinge</span></span>
+        </span>
+        <span>3D folding example of the paper, rendered from the simulation data.</span>
+      </figcaption>
+    </figure>
+
+    <div class="stats">
+      <div class="stat reveal">
+        <div class="v">4.3–9.1<small>×</small></div>
+        <div class="l">faster than uniform fine-grid MPM at the finest tested resolution of the elastic-inclusion benchmark, at comparable stress error</div>
+      </div>
+      <div class="stat reveal">
+        <div class="v">2–4</div>
+        <div class="l">Schwarz iterations per coarse step on average, across contact, inclusion and 3D folding runs</div>
+      </div>
+      <div class="stat reveal">
+        <div class="v">≤ 0.5<small>%</small></div>
+        <div class="l">difference from a single-domain solution along the whole large-deflection cantilever master curve</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== IDEA ===================== -->
+<section id="idea">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">01 · Idea</div>
+      <h2>Fine resolution where the mechanics is, coarse everywhere else</h2>
+    </div>
+
+    <div class="two wide-left">
+      <div class="measure">
+        <p>The material point method handles large deformation, contact and history-dependent materials well, but accurate stresses near a contact patch, a material interface or a hinge need a fine grid and many particles. Refining uniformly pays that price over the whole body, and the small time step that the fine region needs is imposed everywhere.</p>
+        <p>Local refinement is harder in MPM than in mesh-based methods, because particles move through the grid and the particle–grid transfer has to stay consistent across the coarse–fine transition. Existing approaches either rebuild the basis functions near the transition or tie two grids together with interface constraints.</p>
+        <p>OS-MPM leaves both solvers untouched. A coarse domain <span class="sym-b">Ω<sub>B</sub></span> and a fine domain <span class="sym-s">Ω<sub>S</sub></span> overlap; each one is advanced by ordinary implicit MPM using the other’s velocity as a boundary condition on the overlap, and the two solves are repeated until the interface velocities agree. The fine domain can also take several small time steps for each coarse step.</p>
+      </div>
+
+      <figure class="fig reveal">
+        <div class="idea">
+          <div class="pane">
+            <h4>Uniform refinement</h4>
+            <p>Fine cells and small time steps over the whole body.</p>
+            <svg viewBox="0 0 240 240" role="img" aria-label="A square body covered entirely by a fine grid, with a small inclusion at its centre.">
+              <defs>
+                <pattern id="pFineU" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M6 0H0V6" fill="none" stroke="#9ccfae" stroke-width=".7"/></pattern>
+                <radialGradient id="hot" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#e0932f" stop-opacity=".55"/><stop offset="1" stop-color="#e0932f" stop-opacity="0"/></radialGradient>
+              </defs>
+              <rect x="6" y="6" width="228" height="228" rx="3" fill="#dff0e4"/>
+              <rect x="6" y="6" width="228" height="228" rx="3" fill="url(#pFineU)"/>
+              <circle cx="120" cy="120" r="46" fill="url(#hot)"/>
+              <circle cx="120" cy="120" r="15" fill="#fff" stroke="#17202a" stroke-width="1.6"/>
+              <rect x="6" y="6" width="228" height="228" rx="3" fill="none" stroke="#3f9160" stroke-width="1.4"/>
+            </svg>
+          </div>
+          <div class="pane">
+            <h4>OS-MPM</h4>
+            <p>A fine patch with its own grid and time step, overlapping a coarse background.</p>
+            <svg viewBox="0 0 240 240" role="img" aria-label="The same body on a coarse grid, with a small fine-grid patch around the inclusion and a ring where the two domains overlap.">
+              <defs>
+                <pattern id="pCoarse" width="24" height="24" x="6" y="6" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#9fb0c2" stroke-width="1"/></pattern>
+                <pattern id="pFine" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M6 0H0V6" fill="none" stroke="#86c29b" stroke-width=".7"/></pattern>
+                <clipPath id="patch"><circle cx="120" cy="120" r="52"/></clipPath>
+              </defs>
+              <rect x="6" y="6" width="228" height="228" rx="3" fill="#e3e9ef"/>
+              <rect x="6" y="6" width="228" height="228" rx="3" fill="url(#pCoarse)"/>
+              <circle cx="120" cy="120" r="52" fill="#dff0e4"/>
+              <path fill-rule="evenodd" fill="#fbe1b8" d="M120 68a52 52 0 1 0 0 104 52 52 0 0 0 0-104zm0 18a34 34 0 1 1 0 68 34 34 0 0 1 0-68z"/>
+              <rect x="60" y="60" width="120" height="120" fill="url(#pFine)" clip-path="url(#patch)"/>
+              <circle cx="120" cy="120" r="52" fill="none" stroke="#3f9160" stroke-width="1.4"/>
+              <circle cx="120" cy="120" r="34" fill="none" stroke="#4a6078" stroke-width="1.2" stroke-dasharray="4 3"/>
+              <circle cx="120" cy="120" r="15" fill="#fff" stroke="#17202a" stroke-width="1.6"/>
+              <rect x="6" y="6" width="228" height="228" rx="3" fill="none" stroke="#4a6078" stroke-width="1.4"/>
+            </svg>
+          </div>
+        </div>
+        <figcaption>
+          <span class="legend">
+            <span class="key"><i class="c-coarse"></i><span>Coarse domain Ω<sub>B</sub></span></span>
+            <span class="key"><i class="c-fine"></i><span>Fine domain Ω<sub>S</sub></span></span>
+            <span class="key"><i class="c-overlap"></i><span>Overlap</span></span>
+          </span>
+        </figcaption>
+      </figure>
+    </div>
+
+    <div class="approach">
+      <div class="card reveal">
+        <div class="n">Existing route A</div>
+        <h4>Modify the kernels</h4>
+        <p>Transition functions, hierarchical or truncated bases and hanging-node constraints near the coarse–fine interface.</p>
+        <ul>
+          <li>Partition of unity, positivity and smoothness must be re-established across resolution levels</li>
+          <li>Added implementation complexity, felt most when particles repeatedly cross the transition</li>
+        </ul>
+      </div>
+      <div class="card reveal">
+        <div class="n">Existing route B</div>
+        <h4>Constrain the interface</h4>
+        <p>Keep the kernels and enforce displacement compatibility with Lagrange multipliers or a penalty.</p>
+        <ul>
+          <li>Multipliers lead to saddle-point systems with additional interface unknowns</li>
+          <li>Penalties trade interface mismatch against ill-conditioning</li>
+        </ul>
+      </div>
+      <div class="card ours reveal">
+        <div class="n">This work</div>
+        <h4>Overlap and iterate</h4>
+        <p>Keep both subdomain solvers standard and exchange boundary velocities on an overlap until they agree.</p>
+        <ul>
+          <li>Unmodified MPM discretization in each subdomain</li>
+          <li>Independent grid spacing and time step per subdomain</li>
+          <li>Cost: a few repeated subdomain solves per coarse step</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== METHOD ===================== -->
+<section id="method">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">02 · Method</div>
+      <h2>One coarse time step of OS-MPM</h2>
+      <p class="sub">The background domain <span class="sym-b">Ω<sub>B</sub></span> uses grid spacing \(\Delta x_B\) and time step \(\Delta T\). The refined domain <span class="sym-s">Ω<sub>S</sub></span> uses \(\Delta x_S \le \Delta x_B\) and \(\Delta t = \Delta T / M\). Each has its own particles; in the overlap both sets exist and interact only through grid boundary conditions.</p>
+    </div>
+
+    <div class="stepper reveal" id="stepper">
+      <div class="side">
+        <header>
+          <div class="t">Alternating Schwarz, step by step</div>
+          <div class="h">From \(t_n\) to \(t_{n+1}\)</div>
+        </header>
+        <ol class="steps" id="steps">
+          <li data-step="0"><button type="button"><span class="num">0</span><span class="name">Prepare</span>
+            <span class="desc">Store the fine particle state. Transfer particles to both grids, and let the boundary particles of each domain mark the grid nodes that will receive data from the other domain.</span></button></li>
+          <li data-step="1"><button type="button"><span class="num">1</span><span class="name">Coarse solve</span>
+            <span class="desc">Project the current fine-grid velocity onto the coarse boundary nodes, then solve Ω<sub>B</sub> implicitly over the full step \(\Delta T\).</span></button></li>
+          <li data-step="2"><button type="button"><span class="num">2</span><span class="name">Fine solve with sub-cycling</span>
+            <span class="desc">Restore the fine particles to \(t_n\). Take \(M\) small steps on Ω<sub>S</sub>; at each one the boundary velocity is interpolated in time between the coarse solutions at \(t_n\) and \(t_{n+1}\).</span></button></li>
+          <li data-step="3"><button type="button"><span class="num">3</span><span class="name">Check the interface</span>
+            <span class="desc">Compare the boundary velocities with those of the previous sweep on both grids. If either relative change exceeds the tolerance, repeat steps 1 and 2.</span></button></li>
+          <li data-step="4"><button type="button"><span class="num">4</span><span class="name">Advance</span>
+            <span class="desc">The fine particles are already at \(t_{n+1}\). Move the coarse particles once with the converged coarse-grid velocity.</span></button></li>
+        </ol>
+        <div class="controls">
+          <button class="iconbtn" id="st-prev" type="button" aria-label="Previous step"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 5 8l5 5"/></svg></button>
+          <button class="iconbtn play" id="st-play" type="button" aria-label="Play"><svg viewBox="0 0 16 16" fill="currentColor"><path id="st-play-icon" d="M4.500 2.800v10.400L13 8z"/></svg></button>
+          <button class="iconbtn" id="st-next" type="button" aria-label="Next step"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 3 5 5-5 5"/></svg></button>
+          <div class="status" id="st-status" aria-live="polite">Schwarz sweep <b>k = 1</b></div>
+        </div>
+      </div>
+
+      <div class="stage">
+        <svg id="scene" data-phase="prep" viewBox="0 0 760 452" role="img" aria-label="Schematic of two overlapping subdomains exchanging boundary velocities, with a timeline of one coarse step and three fine sub-steps and a bar chart of the interface residual.">
+          <defs>
+            <marker id="ah-s" viewBox="0 0 8 8" refX="6.500" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1 7 4 1 7z" fill="#2f7a4f"/></marker>
+            <marker id="ah-b" viewBox="0 0 8 8" refX="6.500" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1 7 4 1 7z" fill="#4a6078"/></marker>
+            <clipPath id="clipB"><rect x="20" y="52" width="400" height="200"/></clipPath>
+            <clipPath id="clipS"><rect x="300" y="52" width="440" height="200"/></clipPath>
+          </defs>
+
+          <!-- labels -->
+          <text class="lbl" x="20" y="24">Ω<tspan baseline-shift="sub" font-size="9">B</tspan>  coarse</text>
+          <text class="lbl s" x="20" y="41">grid Δx<tspan baseline-shift="sub" font-size="8">B</tspan>, step ΔT</text>
+          <text class="lbl" x="740" y="24" text-anchor="end">Ω<tspan baseline-shift="sub" font-size="9">S</tspan>  fine</text>
+          <text class="lbl s" x="740" y="41" text-anchor="end">grid Δx<tspan baseline-shift="sub" font-size="8">S</tspan>, step Δt = ΔT / M</text>
+          <text class="lbl" x="360" y="24" text-anchor="middle" fill="#8a5510" style="fill:#8a5510">overlap</text>
+          <path d="M300 30v8M420 30v8M300 34h120" stroke="#e0932f" stroke-width="1.4" fill="none"/>
+
+          <!-- domains -->
+          <rect class="dom-b" x="20" y="52" width="400" height="200" rx="2"/>
+          <rect class="dom-s" x="300" y="52" width="440" height="200" rx="2"/>
+          <rect class="ov" x="300" y="52" width="120" height="200"/>
+          <g class="grid-s" id="grid-s"></g>
+          <g class="grid-b" id="grid-b"></g>
+          <g class="pb" id="pb" clip-path="url(#clipB)"></g>
+          <g class="ps" id="ps" clip-path="url(#clipS)"></g>
+          <rect class="halo b" x="20" y="52" width="400" height="200" rx="2"/>
+          <rect class="halo s" x="300" y="52" width="440" height="200" rx="2"/>
+
+          <!-- transfers -->
+          <g class="flow sb" id="flow-sb"></g>
+          <g class="flow bs" id="flow-bs"></g>
+          <g class="gam gam-b" id="gam-b"></g>
+          <g class="gam gam-s" id="gam-s"></g>
+          <text class="lbl s" x="296" y="268" text-anchor="middle" style="fill:#2f7a4f">Γ<tspan baseline-shift="sub" font-size="8">S</tspan> receives from coarse</text>
+          <text class="lbl s" x="428" y="268" text-anchor="start" dx="34" style="fill:#4a6078">Γ<tspan baseline-shift="sub" font-size="8">B</tspan> receives from fine</text>
+
+          <!-- timeline -->
+          <text class="lbl" x="20" y="306">Time</text>
+          <text class="lbl s" x="60" y="336" text-anchor="end">Ω<tspan baseline-shift="sub" font-size="8">B</tspan></text>
+          <rect class="tl-track" x="72" y="326" width="384" height="12" rx="3"/>
+          <rect class="tl-b" id="tl-b" x="72" y="326" width="0" height="12" rx="3"/>
+          <text class="lbl s" x="264" y="318" text-anchor="middle">ΔT</text>
+          <path class="interp" d="M72 338C72 362 200 356 200 384M456 338C456 362 200 356 200 384M72 338C72 362 328 356 328 384M456 338C456 362 328 356 328 384"/>
+          <text class="lbl s" x="60" y="398" text-anchor="end">Ω<tspan baseline-shift="sub" font-size="8">S</tspan></text>
+          <g id="tl-s-tracks"></g>
+          <g id="tl-s"></g>
+          <text class="lbl s" x="136" y="418" text-anchor="middle">Δt</text>
+          <text class="lbl s" x="264" y="418" text-anchor="middle">Δt</text>
+          <text class="lbl s" x="392" y="418" text-anchor="middle">Δt</text>
+          <text class="lbl s" x="72" y="440" text-anchor="middle">t<tspan baseline-shift="sub" font-size="8">n</tspan></text>
+          <text class="lbl s" x="456" y="440" text-anchor="middle">t<tspan baseline-shift="sub" font-size="8">n+1</tspan></text>
+          <path class="tl-tick" d="M72 344v82M456 344v82"/>
+
+          <!-- residual -->
+          <text class="lbl" x="530" y="306">Interface residual</text>
+          <path class="axis" d="M530 420h200"/>
+          <path class="eps" d="M530 384h200"/>
+          <text class="lbl s" x="732" y="380" text-anchor="end">tolerance ε</text>
+          <rect class="res-bar" id="res-1" x="560" y="420" width="44" height="0" rx="3"/>
+          <rect class="res-bar ok" id="res-2" x="640" y="420" width="44" height="0" rx="3"/>
+          <text class="lbl s" x="582" y="438" text-anchor="middle">k = 1</text>
+          <text class="lbl s" x="662" y="438" text-anchor="middle">k = 2</text>
+          <text class="verdict" id="verdict" x="530" y="324"></text>
+        </svg>
+        <div class="note swipe">Swipe sideways to see the whole diagram.</div>
+        <div class="note">Schematic with \(M = 3\) sub-steps and two sweeps. In the paper’s runs the Schwarz loop needs about two to four sweeps per coarse step.</div>
+      </div>
+    </div>
+
+    <div class="ops">
+      <article class="op reveal">
+        <div class="txt">
+          <div class="n">Coupling nodes</div>
+          <h3>Boundary nodes come from the particles</h3>
+          <p>Each domain marks a layer of boundary particles once, before the run. At every frame their particle-to-grid footprint selects the grid nodes that receive Schwarz boundary data, so no interface geometry has to be tracked. Where both grids claim the same location, the side with the larger grid mass density donates and the other receives.</p>
+        </div>
+        <div class="pic">
+          <img class="zoomable" src="assets/fig/boundary_selection.svg" alt="Boundary particles along the material boundary scatter to the surrounding grid nodes, which become the selected boundary grid nodes." loading="lazy">
+          <div class="cap"><span class="ref">Fig. 2a of the paper.</span></div>
+        </div>
+      </article>
+
+      <article class="op reveal">
+        <div class="txt">
+          <div class="n">Space · fine → coarse</div>
+          <h3>Projection, not point sampling</h3>
+          <p>A coarse node covers many fine nodes. Sampling the fine velocity at one point would ignore most of the momentum under the coarse basis function, so the fine-grid velocity is restricted by a mass-weighted average over the whole coarse support, in the same way particles are transferred to a grid. Coarse-to-fine uses mass-normalized interpolation; both directions use a local affine reconstruction of the donor velocity.</p>
+        </div>
+        <div class="eq">\[\mathbf v_{B,I}=\frac{\sum_{j} m_{S,j}\,N_{B,I}(\mathbf x_{S,j})\,\tilde{\mathbf v}_{S,j}(\mathbf x_{B,I})}{\sum_{j} m_{S,j}\,N_{B,I}(\mathbf x_{S,j})}\]</div>
+        <div class="pic">
+          <img class="zoomable" src="assets/fig/projection_comparison.svg" alt="Left: naive interpolation uses only the fine nodes next to a coarse node. Right: the projection gathers all fine nodes inside the support of the coarse node." loading="lazy">
+          <div class="cap">Point sampling (left) against the support-wide projection (right). <span class="ref">Fig. 3 of the paper.</span></div>
+        </div>
+      </article>
+
+      <article class="op reveal">
+        <div class="txt">
+          <div class="n">Time · coarse → fine</div>
+          <h3>Sub-cycling with interpolated boundary data</h3>
+          <p>The fine domain needs boundary velocities at every sub-step, while the coarse solution exists only at \(t_n\) and \(t_{n+1}\). They are interpolated linearly in time, so the accuracy of the exchange is governed by the coarse step \(\Delta T\) and not by \(M\) alone.</p>
+        </div>
+        <div class="eq">\[\mathbf v_{\Gamma_S}^{\,n+m/M}=\Bigl(1-\tfrac{m}{M}\Bigr)\,\mathbf v_{\Gamma_S}^{\,n}+\tfrac{m}{M}\,\mathbf v_{\Gamma_S}^{\,n+1},\qquad m=1,\dots,M\]</div>
+        <div class="pic">
+          <svg class="diagram" viewBox="0 0 520 150" role="img" aria-label="A coarse step from t n to t n plus one above three fine sub-steps; the coarse boundary velocities at both ends are interpolated to the intermediate times.">
+            <path d="M120 44v64M480 44v64" stroke="#b9c0c8" stroke-dasharray="4 4" fill="none"/>
+            <path d="M120 44C120 84 240 70 240 108M480 44C480 84 240 70 240 108M120 44C120 84 360 70 360 108M480 44C480 84 360 70 360 108" stroke="#9aa3ad" stroke-dasharray="4 4" fill="none"/>
+            <path d="M120 44h360" stroke="#4a6078" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="120" cy="44" r="6" fill="#4a6078"/><circle cx="480" cy="44" r="6" fill="#4a6078"/>
+            <path d="M120 108h360" stroke="#3f9160" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="120" cy="108" r="6" fill="#3f9160"/><circle cx="240" cy="108" r="6" fill="#3f9160"/><circle cx="360" cy="108" r="6" fill="#3f9160"/><circle cx="480" cy="108" r="6" fill="#3f9160"/>
+            <text x="16" y="49" style="fill:#33475c;font-weight:600">Coarse Ω<tspan baseline-shift="sub" font-size="10">B</tspan></text>
+            <text x="16" y="113" style="fill:#256a43;font-weight:600">Fine Ω<tspan baseline-shift="sub" font-size="10">S</tspan></text>
+            <text x="300" y="30" text-anchor="middle">ΔT</text>
+            <text x="120" y="24" text-anchor="middle" class="m">v<tspan baseline-shift="super" font-size="10">n</tspan></text>
+            <text x="480" y="24" text-anchor="middle" class="m">v<tspan baseline-shift="super" font-size="10">n+1</tspan></text>
+            <text x="180" y="100" text-anchor="middle">Δt</text><text x="300" y="100" text-anchor="middle">Δt</text><text x="420" y="100" text-anchor="middle">Δt</text>
+            <text x="120" y="136" text-anchor="middle" class="m">t<tspan baseline-shift="sub" font-size="10">n</tspan></text>
+            <text x="240" y="136" text-anchor="middle" class="m">t<tspan baseline-shift="sub" font-size="10">n+1/3</tspan></text>
+            <text x="360" y="136" text-anchor="middle" class="m">t<tspan baseline-shift="sub" font-size="10">n+2/3</tspan></text>
+            <text x="480" y="136" text-anchor="middle" class="m">t<tspan baseline-shift="sub" font-size="10">n+1</tspan></text>
+          </svg>
+          <div class="cap">Example with \(M = 3\). <span class="ref">After Fig. 4 of the paper.</span></div>
+        </div>
+      </article>
+
+      <article class="op reveal">
+        <div class="txt">
+          <div class="n">Stopping rule</div>
+          <h3>Converged when both interfaces stop changing</h3>
+          <p>The loop ends when the relative change of the boundary velocities between consecutive sweeps is below the tolerance on both grids. The fine particles are restored to their state at \(t_n\) at the start of every sweep, so each sweep starts from the same initial condition. APIC is the default particle–grid transfer.</p>
+        </div>
+        <div class="eq">\[r_\alpha^{(k)}=\frac{\bigl\lVert \mathbf v_{\Gamma_\alpha}^{(k+1)}-\mathbf v_{\Gamma_\alpha}^{(k)}\bigr\rVert_2}{\bigl\lVert \mathbf v_{\Gamma_\alpha}^{(k+1)}\bigr\rVert_2}\;\le\;\epsilon_{\mathrm{conv}},\qquad \alpha\in\{B,S\}\]</div>
+        <div class="pic">
+          <img class="zoomable" src="assets/fig/schwarz_convergence.svg" alt="Interface residual against Schwarz iteration for Hertz contact, the inclusion and 3D folding; residuals fall below the tolerance within a few iterations." loading="lazy">
+          <div class="cap">Residuals at representative coarse steps of three runs. Mean iterations per coarse step: 3.63 (Hertz contact), 2.93 (inclusion), 2.07 (3D folding). <span class="ref">Fig. 18 of the paper.</span></div>
+        </div>
+      </article>
+    </div>
+
+    <details class="more">
+      <summary>Algorithm and full pipeline figure <span>Algorithm 1 and Fig. 5 of the paper</span></summary>
+      <div class="body">
+        <div class="two" style="gap:34px; align-items:start; margin-top:14px">
+          <ol class="algo">
+            <li class="c"><span>Preparation</span></li>
+            <li><span>Store fine particle states</span></li>
+            <li><span>Particle-to-grid transfer on Ω<sub>B</sub> and Ω<sub>S</sub></span></li>
+            <li><span>Identify boundary node sets Γ<sub>B</sub>, Γ<sub>S</sub>; apply overlap arbitration</span></li>
+            <li><span><b>for</b> sweep \(k = 0,\dots,k_{\max}\)</span></li>
+            <li class="i1"><span>Coarse boundary data ← projection of fine-grid velocity</span></li>
+            <li class="i1"><span>Implicit solve on Ω<sub>B</sub> for \(\Delta T\)</span></li>
+            <li class="i1"><span>Restore fine particle states; particle-to-grid on Ω<sub>S</sub></span></li>
+            <li class="i1"><span>Fine boundary data at \(t_n\), \(t_{n+1}\) ← interpolation of coarse-grid velocity</span></li>
+            <li class="i1"><span><b>for</b> sub-step \(m = 1,\dots,M\)</span></li>
+            <li class="i2"><span>Interpolate boundary data in time</span></li>
+            <li class="i2"><span>Implicit solve on Ω<sub>S</sub> for \(\Delta t\)</span></li>
+            <li class="i2"><span>Grid-to-particle, advection, particle-to-grid on Ω<sub>S</sub></span></li>
+            <li class="i1"><span><b>if</b> \(r_B \le \epsilon_{\mathrm{conv}}\) and \(r_S \le \epsilon_{\mathrm{conv}}\): <b>break</b></span></li>
+            <li class="c"><span>After convergence</span></li>
+            <li><span>Grid-to-particle and advection on Ω<sub>B</sub></span></li>
+          </ol>
+          <img class="zoomable" src="assets/fig/pipeline.svg" alt="Pipeline overview: preparation, Schwarz iteration with coarse solve and fine solve with sub-cycling, convergence check, and post-convergence update of the coarse particles." loading="lazy">
+        </div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ===================== RESULTS ===================== -->
+<section id="results">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">03 · Results</div>
+      <h2>Three benchmarks, a sensitivity study and a 3D example</h2>
+      <p class="sub">Every result is compared with an analytical solution, a single-domain MPM solution on a matching grid, or both. Figures are reproduced from the paper.</p>
+    </div>
+
+    <!-- cantilever -->
+    <article class="result" id="cantilever" style="padding-top:8px">
+      <div class="two wide-right">
+        <div>
+          <div class="head"><span class="idx">3.1</span><span class="what">Large-deflection bending</span></div>
+          <h3>Gravity-driven cantilever beam</h3>
+          <p>A slender beam, split lengthwise into two overlapping subdomains with the same grid spacing, sags under its own weight. The test isolates the spatial coupling and checks that it adds no artificial stiffness when the beam bends far.</p>
+          <ul class="facts">
+            <li><b>≤ 0.5%</b><span>difference from a single-domain run on the same grid at each of twelve load levels, \(\Gamma^*_{\mathrm{gb}}\) from \(10^{-2}\) to \(10^{3}\)</span></li>
+            <li><b>0.16%</b><span>difference in tip deflection in the profile comparison (0.06850 m against 0.06861 m)</span></li>
+          </ul>
+          <div class="setup">
+            <svg viewBox="0 0 520 104" role="img" aria-label="Beam from x = 0.05 to 0.90 m: coarse domain from 0.05 to 0.45, fine domain from 0.10 to 0.90, overlap from 0.10 to 0.45.">
+              <defs><marker id="ah-g" viewBox="0 0 8 8" refX="6.5" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1 7 4 1 7z" fill="#6c7682"/></marker></defs>
+              <rect x="50" y="38" width="400" height="24" fill="#dff0e4" stroke="#3f9160" stroke-width="1.2"/>
+              <rect x="25" y="38" width="200" height="24" fill="#e3e9ef" stroke="#4a6078" stroke-width="1.2"/>
+              <rect x="50" y="38" width="175" height="24" fill="#f6d9a8" stroke="#e0932f" stroke-width="1.2"/>
+              <path d="M25 26v48" stroke="#17202a" stroke-width="2.4"/>
+              <path d="M25 30l-8 8M25 41l-8 8M25 52l-8 8M25 63l-8 8" stroke="#17202a" stroke-width="1"/>
+              <text x="137" y="26" text-anchor="middle" style="fill:#8a5510">overlap</text>
+              <text x="337" y="55" text-anchor="middle" style="fill:#256a43">Ω<tspan baseline-shift="sub" font-size="10">S</tspan></text>
+              <text x="26" y="92" class="m">0.05</text><text x="50" y="92" class="m" dx="20">0.10</text><text x="225" y="92" class="m" text-anchor="middle">0.45</text><text x="450" y="92" class="m" text-anchor="end">0.90 m</text>
+              <path d="M478 34v40" stroke="#6c7682" stroke-width="1.2" marker-end="url(#ah-g)"/>
+              <text x="488" y="60" class="m">g</text>
+            </svg>
+            <div class="cap">Domain layout, to scale along the beam: Ω<sub>B</sub> spans 0.05–0.45 m and Ω<sub>S</sub> spans 0.10–0.90 m. Both use \(\Delta x = 0.005\) m.</div>
+          </div>
+        </div>
+        <div class="pair" style="align-items:start">
+          <figure class="fig reveal">
+            <div class="plate tight"><img class="zoomable" src="assets/fig/cantilever_trajectory.svg" alt="Log-log plot of deformation aspect ratio against the gravito-bending parameter. The OS-MPM points follow the small-deflection line and bend toward the large-deflection line." loading="lazy"></div>
+            <figcaption><b>Master curve.</b> Aspect ratio \(H/W\) of the deformed beam against the gravito-bending parameter, with both asymptotes. <span class="ref">Fig. 7</span></figcaption>
+          </figure>
+          <figure class="fig reveal">
+            <div class="plate tight"><img class="zoomable" src="assets/fig/cantilever_trajectory_displacement_comparison.svg" alt="Normalized deflection along the beam for single-domain and dual-domain simulations; the curves nearly coincide." loading="lazy"></div>
+            <figcaption><b>Deflection profile.</b> Single-domain and dual-domain curves nearly coincide along the beam. <span class="ref">Fig. 8</span></figcaption>
+          </figure>
+        </div>
+      </div>
+    </article>
+
+    <!-- hertz -->
+    <article class="result" id="hertz">
+      <div class="two wide-right">
+        <div>
+          <div class="head"><span class="idx">3.2</span><span class="what">Localized contact</span></div>
+          <h3>Hertzian contact</h3>
+          <p>An elastic half-cylinder is pressed onto a rigid plane. The fine domain covers the contact zone, the coarse domain the bulk, with \(h_B = 2h_S\) and ten resolutions from \(h_S = 1/120\) to \(1/500\) m. Each run is paired with a uniform grid at \(h = h_S\).</p>
+          <ul class="facts">
+            <li><b>Same trend</b><span>single- and dual-domain pressure profiles closely agree at matching grid spacing, and both approach the Hertz solution under refinement</span></li>
+            <li><b>93%</b><span>of the analytical peak pressure is reached by the effective peak at the finest resolution; the contact patch stays slightly broadened in both solvers</span></li>
+            <li><b>96.9–99.9%</b><span>of the applied load is recovered as floor reaction by OS-MPM from the coarsest to the finest resolution. The velocity exchange does not enforce force balance across the overlap; the deficit shrinks as the overlap spans more coarse cells</span></li>
+          </ul>
+          <div class="setup">
+            <svg viewBox="0 0 520 206" role="img" aria-label="Half-cylinder of radius 0.4 m above a rigid floor. The fine domain covers the lowest part up to 0.12 m above the floor, the coarse domain everything above 0.08 m, and the band between is the overlap.">
+              <defs>
+                <clipPath id="hzB"><rect x="0" y="0" width="520" height="160"/></clipPath>
+                <clipPath id="hzS"><rect x="0" y="144" width="520" height="60"/></clipPath>
+                <clipPath id="hzO"><rect x="0" y="144" width="520" height="16"/></clipPath>
+                <marker id="ah-r" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1 7 4 1 7z" fill="#b8442f"/></marker>
+              </defs>
+              <g clip-path="url(#hzB)"><path d="M100 14a160 160 0 0 0 320 0z" fill="#e3e9ef" stroke="#4a6078" stroke-width="1.2"/></g>
+              <g clip-path="url(#hzS)"><path d="M100 14a160 160 0 0 0 320 0z" fill="#dff0e4" stroke="#3f9160" stroke-width="1.2"/></g>
+              <g clip-path="url(#hzO)"><path d="M100 14a160 160 0 0 0 320 0z" fill="#f6d9a8"/></g>
+              <path d="M100 14h320" stroke="#4a6078" stroke-width="1.2"/>
+              <path d="M150 1v9" stroke="#b8442f" stroke-width="1.4" marker-end="url(#ah-r)"/><path d="M205 1v9" stroke="#b8442f" stroke-width="1.4" marker-end="url(#ah-r)"/><path d="M260 1v9" stroke="#b8442f" stroke-width="1.4" marker-end="url(#ah-r)"/><path d="M315 1v9" stroke="#b8442f" stroke-width="1.4" marker-end="url(#ah-r)"/><path d="M370 1v9" stroke="#b8442f" stroke-width="1.4" marker-end="url(#ah-r)"/>
+              <path d="M60 194h400" stroke="#17202a" stroke-width="2.2"/>
+              <path d="M70 194l-7 9M100 194l-7 9M130 194l-7 9M160 194l-7 9M190 194l-7 9M220 194l-7 9M250 194l-7 9M280 194l-7 9M310 194l-7 9M340 194l-7 9M370 194l-7 9M400 194l-7 9M430 194l-7 9M460 194l-7 9" stroke="#17202a" stroke-width="1"/>
+              <text x="260" y="84" text-anchor="middle" style="fill:#33475c">Ω<tspan baseline-shift="sub" font-size="10">B</tspan>  bulk</text>
+              <path d="M352 152h34" stroke="#6c7682" stroke-width=".8"/>
+              <text x="390" y="156" style="fill:#8a5510">overlap</text>
+              <path d="M306 169h80" stroke="#6c7682" stroke-width=".8"/>
+              <text x="390" y="174" style="fill:#256a43">Ω<tspan baseline-shift="sub" font-size="10">S</tspan>  contact zone</text>
+              <text x="100" y="11" class="m" text-anchor="end" dx="-8">load</text>
+              
+            </svg>
+            <div class="cap">Setup, to scale: radius 0.4 m, overlap band 0.04 m thick. The load acts on the top strip and the body starts 0.05 m above the rigid plane.</div>
+          </div>
+        </div>
+        <figure class="fig reveal">
+          <div class="plate"><img class="zoomable" src="assets/fig/hertz_reaction.svg" alt="Contact pressure profiles for uniform-grid MPM and for OS-MPM at ten resolutions against the analytical Hertz profile, and the relative error of the effective peak pressure against grid spacing." loading="lazy"></div>
+          <figcaption><b>Contact pressure under refinement.</b> (a) Uniform-grid MPM and (b) OS-MPM against the analytical Hertz profile. (c) Relative error of the effective peak pressure against \(h/b\), where \(b\) is the analytical contact half-width; the two methods fall on the same line. <span class="ref">Fig. 10</span></figcaption>
+        </figure>
+      </div>
+    </article>
+
+    <!-- inclusion -->
+    <article class="result" id="inclusion">
+      <div class="two wide-right">
+        <div>
+          <div class="head"><span class="idx">3.3</span><span class="what">Material heterogeneity · accuracy and cost</span></div>
+          <h3>Elastic inclusion</h3>
+          <p>A circular inclusion with a misfit strain sits in an elastic matrix. The exact stress is uniform inside the inclusion and decays as \((R/r)^2\) outside, with a jump at the material interface. The fine domain covers the inclusion and its vicinity, with \(M = 2\) sub-steps.</p>
+          <ul class="facts">
+            <li><b>&lt; 1.5%</b><span>difference between OS-MPM and the single-domain reference at \(h = 0.004\) m, for all three stiffness ratios and all stress components</span></li>
+            <li><b>Shared error</b><span>the error against the analytical solution sits in a narrow band on the inclusion boundary and is common to both solvers: the circular interface is not grid-conforming</span></li>
+            <li><b>≤ 1.2 pts</b><span>gap between the two center-strip stress errors for \(h \le 0.008\) m. On coarser grids the dual-domain error is larger, up to about twice the single-domain error at the coarsest level</span></li>
+          </ul>
+          <div class="setup">
+            <svg viewBox="0 0 520 200" role="img" aria-label="Square matrix with a circular inclusion of radius 0.05 m. The fine domain is a disc of radius 0.15 m, the coarse domain has a hole of radius 0.10 m, and the ring between is the overlap.">
+              <defs>
+                <pattern id="incC" width="16" height="16" x="170" y="10" patternUnits="userSpaceOnUse"><path d="M16 0H0V16" fill="none" stroke="#b4c1cf" stroke-width=".8"/></pattern>
+                <pattern id="incF" width="5.333" height="5.333" x="170" y="10" patternUnits="userSpaceOnUse"><path d="M5.333 0H0V5.333" fill="none" stroke="#9ccfae" stroke-width=".6"/></pattern>
+                <clipPath id="incDisc"><circle cx="260" cy="100" r="33.75"/></clipPath>
+              </defs>
+              <!-- scale: 225 px per metre; matrix 0.8 m = 180 px -->
+              <rect x="170" y="10" width="180" height="180" fill="#e3e9ef"/>
+              <rect x="170" y="10" width="180" height="180" fill="url(#incC)"/>
+              <circle cx="260" cy="100" r="33.75" fill="#dff0e4"/>
+              <path fill-rule="evenodd" fill="#f6d9a8" d="M260 66.250a33.750 33.750 0 1 0 0 67.500 33.750 33.750 0 0 0 0-67.500zm0 11.250a22.500 22.500 0 1 1 0 45 22.500 22.500 0 0 1 0-45z"/>
+              <rect x="215" y="55" width="90" height="90" fill="url(#incF)" clip-path="url(#incDisc)"/>
+              <circle cx="260" cy="100" r="33.75" fill="none" stroke="#3f9160" stroke-width="1.2"/>
+              <circle cx="260" cy="100" r="22.5" fill="none" stroke="#4a6078" stroke-width="1" stroke-dasharray="3 2.500"/>
+              <circle cx="260" cy="100" r="11.25" fill="#fff" stroke="#17202a" stroke-width="1.4"/>
+              <rect x="170" y="10" width="180" height="180" fill="none" stroke="#4a6078" stroke-width="1.2"/>
+              <path d="M271 97 372 64" stroke="#6c7682" stroke-width=".8"/><text x="377" y="68">inclusion</text>
+              <path d="M284 114 372 114" stroke="#6c7682" stroke-width=".8"/><text x="377" y="119" style="fill:#8a5510">overlap</text>
+              <text x="146" y="68" text-anchor="end" style="fill:#33475c">Ω<tspan baseline-shift="sub" font-size="10">B</tspan>  coarse grid</text><path d="M152 64h34" stroke="#6c7682" stroke-width=".8"/>
+              <text x="146" y="119" text-anchor="end" style="fill:#256a43">Ω<tspan baseline-shift="sub" font-size="10">S</tspan>  fine grid</text><path d="M152 114 234 106" stroke="#6c7682" stroke-width=".8"/>
+            </svg>
+            <div class="cap">Setup, to scale: inclusion radius 0.05 m, hole in the coarse domain 0.10 m, fine domain 0.15 m. The inclusion starts with a uniform contraction of 1% and the body relaxes to equilibrium.</div>
+          </div>
+        </div>
+
+        <figure class="fig reveal" id="inc-fig">
+          <div class="tabbar">
+            <span>Stiffness ratio \(E_{\mathrm{in}}/E_{\mathrm{out}}\)</span>
+            <div class="tabs" role="tablist" aria-label="Stiffness ratio">
+              <button type="button" role="tab" aria-selected="true" data-r="1">1</button>
+              <button type="button" role="tab" aria-selected="false" data-r="2">2</button>
+              <button type="button" role="tab" aria-selected="false" data-r="5">5</button>
+            </div>
+          </div>
+          <div class="plate"><img class="zoomable" id="inc-img" src="assets/fig/inclusion_stress_r1.webp" width="2011" height="2499" alt="Stress fields of the elastic inclusion: dual-domain OS-MPM, single-domain reference, error against the analytical solution, and difference between the two solvers, for the three in-plane stress components." loading="lazy"></div>
+          <figcaption><b>Stress fields at \(h = 0.004\) m.</b> Rows: OS-MPM, single-domain reference, OS-MPM against the analytical solution, OS-MPM against the single-domain reference. Columns: \(\sigma_{xx}\), \(\sigma_{yy}\), \(\sigma_{xy}\). Solid and dashed circles mark the boundaries of Ω<sub>B</sub> and Ω<sub>S</sub>. <span class="ref" id="inc-ref">Fig. 12</span></figcaption>
+        </figure>
+      </div>
+
+      <div class="two" style="margin-top:34px; align-items:start">
+        <div class="speed reveal" id="speed">
+          <div class="top">
+            <div>
+              <div class="title">CPU time at the finest resolution, \(h = 0.004\) m</div>
+              <div class="subtitle">Total time to equilibrium, in seconds. OS-MPM timings include all Schwarz iterations and interface transfers.</div>
+            </div>
+          </div>
+          <div class="rows" id="speed-rows"></div>
+          <div class="foot">
+            <span class="legend">
+              <span class="key"><i class="c-uniform"></i><span>Uniform fine-grid MPM</span></span>
+              <span class="key"><i class="c-os"></i><span>OS-MPM</span></span>
+            </span>
+            <details>
+              <summary>All four resolutions as a table</summary>
+              <div class="scroll-x"><table id="speed-table">
+                <thead><tr><th>Ratio</th><th>\(h\) (m)</th><th>Uniform (s)</th><th>OS-MPM (s)</th><th>Speed-up</th><th>Error, uniform</th><th>Error, OS-MPM</th></tr></thead>
+                <tbody></tbody>
+              </table></div>
+            </details>
+          </div>
+        </div>
+        <div>
+          <h4 style="font-family:var(--serif); font-size:1.18rem; font-weight:620">The saving grows with resolution</h4>
+          <p>At the finest tested resolution the two solvers reach comparable center-strip stress errors (4.5% and 4.7%, 6.1% and 6.2%, 10.3% and 10.2% for uniform MPM and OS-MPM), and OS-MPM is 6.6, 9.1 and 4.3 times faster for stiffness ratios 1, 2 and 5. One level coarser, at \(h = 0.008\) m, the ratios are 2.0, 1.9 and 0.9, and on the two coarsest grids OS-MPM is slower than the uniform solver.</p>
+          <p>The Schwarz loop has an overhead that pays off once the fine-grid cost outside the refined region dominates the uniform simulation. The baseline here is uniform refinement; a comparison with other locally refined MPM formulations is left to future work in the paper.</p>
+          <p style="font-size:13.5px; color:var(--muted)">Measured on a workstation with a Ryzen 9950X3D CPU and 64 GB of RAM.</p>
+        </div>
+      </div>
+
+      <div class="pair pair-75" style="margin-top:26px; align-items:start">
+        <figure class="fig reveal">
+          <div class="plate"><img class="zoomable" src="assets/fig/fig16_complete.svg" alt="Left column: center-strip relative stress error against grid spacing for single-domain MPM and OS-MPM, for three stiffness ratios. Right column: CPU time and stress error at four paired refinement levels." loading="lazy"></div>
+          <figcaption><b>Accuracy and cost under refinement.</b> Left: center-strip relative \(L_1\) stress error against grid spacing, from 42 runs. Right: stress error and total CPU time at four paired refinement levels. <span class="ref">Fig. 16</span></figcaption>
+        </figure>
+        <figure class="fig reveal" id="yy-fig">
+          <div class="plate tight">
+            <img class="zoomable" id="yy-dual" src="assets/fig/inclusion_yy_dual_r1.svg" alt="Stress component sigma y y along a horizontal line through the inclusion centre at successive refinement levels, OS-MPM, against the analytical solution." loading="lazy">
+            <img class="zoomable" id="yy-single" src="assets/fig/inclusion_yy_single_r1.svg" alt="The same profile for single-domain MPM." loading="lazy" style="margin-top:6px">
+          </div>
+          <figcaption><b>\(\sigma_{yy}\) through the inclusion centre</b> at each refinement level, for the stiffness ratio selected above. Top: OS-MPM. Bottom: single-domain MPM. Red dashed line: analytical solution. <span class="ref">Fig. 15</span></figcaption>
+        </figure>
+      </div>
+    </article>
+
+    <!-- overlap -->
+    <article class="result" id="overlap">
+      <div class="two wide-right">
+        <div>
+          <div class="head"><span class="idx">3.4</span><span class="what">Sensitivity</span></div>
+          <h3>How wide should the overlap be?</h3>
+          <p>A wider overlap makes the Schwarz iteration converge in fewer sweeps but enlarges the fine domain, so each sweep costs more. In the inclusion study with \(h_B/h_S = M \in \{2, 3\}\) the two effects balance over a broad range.</p>
+          <ul class="facts">
+            <li><b>3–4 → 2</b><span>sweeps per coarse step, from narrow overlaps to overlaps beyond \(10\,h_B\)</span></li>
+            <li><b>5–10 \(h_B\)</b><span>overlap width with the lowest total step cost in the tested configurations</span></li>
+            <li><b>Stable</b><span>stress error away from the material interface is insensitive to the overlap width, except at the narrowest overlap for \(M = 3\)</span></li>
+          </ul>
+        </div>
+        <figure class="fig reveal">
+          <div class="plate"><img class="zoomable" src="assets/fig/overlap_cost.svg" alt="Four panels against overlap width: mean Schwarz sweeps per coarse step, time per sweep, wall time per coarse step, and center-strip stress error, for M equal to two and three." loading="lazy"></div>
+          <figcaption><b>Overlap-width study.</b> (a) Mean Schwarz iterations per coarse step, (b) cost per iteration, (c) wall-clock time per coarse step, (d) center-strip relative stress error. Stars mark the sampled cost minima. <span class="ref">Fig. 17</span></figcaption>
+        </figure>
+      </div>
+    </article>
+
+    <!-- tension -->
+    <article class="result" id="tension">
+      <div class="head"><span class="idx">3.5</span><span class="what">Large strain · transfer scheme</span></div>
+      <div class="two" style="align-items:end; margin-bottom:22px">
+        <div>
+          <h3>Notched bar in tension</h3>
+          <p style="margin:0">A Neo-Hookean bar with two circular notches is stretched by its right grip. The fine domain covers the notched middle, with \(h_B = 2h_S = 0.01\) m and \(M = 2\) sub-steps. The subdomains are attached to the particles, so both overlap bands stretch with the bar.</p>
+        </div>
+        <ul class="facts" style="margin:0">
+          <li><b>149%</b><span>grip engineering strain reached with APIC and with PIC transfers</span></li>
+          <li><b>2–3</b><span>Schwarz iterations per coarse step throughout, with APIC</span></li>
+        </ul>
+      </div>
+      <figure class="media reveal" style="margin-top:0">
+        <video autoplay muted loop playsinline preload="metadata" poster="assets/video/tension-poster.jpg" aria-label="Animation of the notched bar stretching to about one and a half times its length. Top: coarse, fine and overlap regions. Bottom: axial Cauchy stress.">
+          <source src="assets/video/tension.mp4" type="video/mp4">
+        </video>
+        <figcaption class="media-bar">
+          <span>APIC run of the paper, every saved state drawn with all particles, up to 147.7% grip strain. The run ends at 149.4%, when the neck separates numerically.</span>
+        </figcaption>
+      </figure>
+      <div class="two wide-right" style="margin-top:26px">
+        <div>
+          <p>With PIC/FLIP blends the run stops earlier as the FLIP fraction \(\beta\) grows: at 96.8% strain for \(\beta = 0.5\), 12.5% for \(\beta = 0.95\) and 9.4% for pure FLIP. In this test the regularity of the transferred velocity field matters more than the accumulated strain, which supports APIC as the default transfer for the coupling.</p>
+        </div>
+        <figure class="fig reveal">
+          <div class="plate"><img class="zoomable" src="assets/fig/pic_flip_iterations_endpoints_cf.svg" alt="Left: Schwarz iterations per coarse step against grip strain for APIC, PIC and PIC/FLIP blends. Right: stress fields of the last states before each run stops." loading="lazy"></div>
+          <figcaption><b>Transfer schemes.</b> (a) Schwarz iterations per coarse step against grip strain. (b) Cauchy stress \(\sigma_{xx}\) in the last displayed state of each PIC/FLIP blend; the snapshots are at different strain levels. <span class="ref">Fig. 19</span></figcaption>
+        </figure>
+      </div>
+    </article>
+
+    <!-- 3D -->
+    <article class="result" id="folding">
+      <div class="two">
+        <div>
+          <div class="head"><span class="idx">3.6</span><span class="what">Three dimensions · qualitative</span></div>
+          <h3>Folding about a compliant hinge</h3>
+          <p>Two stiff panels joined by a hinge a hundred times softer are folded through 90° by rotating the end grips, as in a foldable display. Deformation concentrates in the hinge, so the fine domain covers the hinge and the adjacent transition zones and the panels stay on the coarse grid.</p>
+          <ul class="facts">
+            <li><b>90.22°</b><span>final fold angle, against 90.07° for a single-domain run at the fine spacing \(h = 1/120\) m</span></li>
+            <li><b>2.07</b><span>Schwarz iterations per coarse step on average over the 40 s run, with tolerance \(10^{-6}\)</span></li>
+            <li><b>295k</b><span>particles: 179,424 in the coarse domain and 115,920 in the fine domain</span></li>
+          </ul>
+          <p style="margin-top:16px; font-size:14.5px; color:var(--muted)">The paper presents this example as a qualitative illustration of the framework in 3D, not as a stress-accuracy benchmark.</p>
+        </div>
+        <figure class="fig reveal">
+          <div class="plate"><img class="zoomable" src="assets/fig/show_case_3d_dual.webp" width="1584" height="1628" alt="Initial and final particle distributions with background grids, four folding configurations, and the von Mises stress at mid-width in the final configuration." loading="lazy"></div>
+          <figcaption><b>Three-dimensional dual-domain folding.</b> (a, b) Particles and background grids at the start and the end. (c–f) Configurations at \(t = 0\), 10, 14 and 40 s. (g) Von Mises stress at mid-width in the final configuration. <span class="ref">Fig. 20</span></figcaption>
+        </figure>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ===================== SCOPE ===================== -->
+<section id="scope">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">04 · Scope</div>
+      <h2>What the paper covers, and what it leaves open</h2>
+    </div>
+    <div class="scope">
+      <div class="item">
+        <h4>Subdomains are prescribed in advance</h4>
+        <p>The refined region is marked on the particles before the run. The method targets problems where that region can be anticipated and the coupling boundary keeps its topology; adaptive placement is future work.</p>
+      </div>
+      <div class="item">
+        <h4>Elastic materials</h4>
+        <p>All examples use linear or Neo-Hookean elasticity. Elasto-plasticity needs a consistent treatment of particle history variables across the overlap and within the Schwarz sweeps.</p>
+      </div>
+      <div class="item">
+        <h4>Two subdomains</h4>
+        <p>The formulation and all tests couple one coarse and one fine domain. More general multi-subdomain layouts and scalable parallel implementations are listed as next steps.</p>
+      </div>
+      <div class="item">
+        <h4>Velocities are matched, forces are not</h4>
+        <p>The exchange is Dirichlet–Dirichlet. Force balance across the overlap is not imposed, which shows as a small reaction deficit in the contact benchmark that decreases under refinement.</p>
+      </div>
+      <div class="item">
+        <h4>Uniform refinement as the baseline</h4>
+        <p>Speed-ups are measured against uniform fine-grid MPM. A fair comparison with other local-refinement or adaptive MPM formulations would need matched accuracy, tolerances and resources.</p>
+      </div>
+      <div class="item">
+        <h4>No bound on the sub-cycling ratio</h4>
+        <p>No general analytical upper bound on \(M\) is established. In practice \(\Delta T\) should resolve the motion of the coarse interface, and the Schwarz residuals monitor the consistency of each step.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CITE ===================== -->
+<section id="cite">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">05 · Citation</div>
+      <h2>Cite this work</h2>
+    </div>
+    <p class="plain-cite">Luo, Z., Li, M. &amp; Jiang, Y. An overlapping Schwarz space-time refinement framework for multi-resolution material point method. <i>Computational Mechanics</i> (2026). <a href="https://doi.org/10.1007/s00466-026-02884-6" target="_blank" rel="noopener">https://doi.org/10.1007/s00466-026-02884-6</a></p>
+    <div class="cite">
+      <button class="copy" id="copy-bib" type="button">Copy BibTeX</button>
+<pre id="bibtex"><span class="k">@article</span><span class="p">{</span>luo2026osmpm<span class="p">,</span>
+  <span class="f">title</span>     <span class="p">=</span> <span class="p">{</span>An overlapping {S}chwarz space-time refinement framework for multi-resolution material point method<span class="p">},</span>
+  <span class="f">author</span>    <span class="p">=</span> <span class="p">{</span>Luo, Zhaofeng and Li, Minchen and Jiang, Yupeng<span class="p">},</span>
+  <span class="f">journal</span>   <span class="p">=</span> <span class="p">{</span>Computational Mechanics<span class="p">},</span>
+  <span class="f">year</span>      <span class="p">=</span> <span class="p">{</span>2026<span class="p">},</span>
+  <span class="f">publisher</span> <span class="p">=</span> <span class="p">{</span>Springer<span class="p">},</span>
+  <span class="f">doi</span>       <span class="p">=</span> <span class="p">{</span>10.1007/s00466-026-02884-6<span class="p">},</span>
+  <span class="f">url</span>       <span class="p">=</span> <span class="p">{</span>https://doi.org/10.1007/s00466-026-02884-6<span class="p">}</span>
+<span class="p">}</span></pre>
+    </div>
+
+    <div class="two" style="margin-top:46px">
+      <div>
+        <h4 style="font-family:var(--serif); font-size:1.15rem; font-weight:620">Acknowledgments</h4>
+        <p style="font-size:15px; color:var(--ink-2)">We sincerely thank Qirui Fu for valuable discussion. Yupeng Jiang acknowledges the financial support from the International Research Training Group (IRTG) 2657, funded by the German Research Foundation (DFG) (Project-ID 433082294). Minchen Li acknowledges Carnegie Mellon University for the Junior Faculty Startup Fund and Genesis AI for the gift funding.</p>
+      </div>
+      <div>
+        <h4 style="font-family:var(--serif); font-size:1.15rem; font-weight:620">Paper</h4>
+        <p style="font-size:15px; color:var(--ink-2)">Published open access in <i>Computational Mechanics</i> (Springer) on 11 November 2026, under a Creative Commons Attribution 4.0 licence.</p>
+        <div class="actions" style="justify-content:flex-start; margin-top:14px">
+          <a class="btn small" href="https://link.springer.com/article/10.1007/s00466-026-02884-6" target="_blank" rel="noopener">Article page</a>
+          <a class="btn small" href="https://link.springer.com/content/pdf/10.1007/s00466-026-02884-6.pdf" target="_blank" rel="noopener">PDF</a>
+          <a class="btn small" href="https://doi.org/10.1007/s00466-026-02884-6" target="_blank" rel="noopener">DOI</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <p>Figures are reproduced from the article, © The Authors 2026, licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Animations are rendered from the simulation data of the corresponding runs in the paper.</p>
+      <p>Typeset in Source Serif 4 and Inter; mathematics by KaTeX.</p>
+    </div>
+    <a href="#top">Back to top ↑</a>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Enlarged figure" tabindex="-1">
+  <button type="button" aria-label="Close">×</button>
+  <img alt="">
+</div>
+<div class="tip" id="tip" role="tooltip"></div>
+
+<script defer src="assets/vendor/katex/katex.min.js"></script>
+<script defer src="assets/vendor/katex/auto-render.min.js"></script>
+<script defer src="assets/js/main.js"></script>
+</body>
+</html>
