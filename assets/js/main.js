@@ -249,16 +249,26 @@
   function initTabs() {
     var fig = $('#inc-fig');
     if (!fig) return;
-    var img = $('#inc-img'), ref = $('#inc-ref');
+    var imgs = $$('img[data-k]', fig), ref = $('#inc-ref');
     var figNo = { 1: 12, 2: 13, 5: 14 };
     var tabs = $$('[role="tab"]', fig);
-    [1, 2, 5].forEach(function (r) { var pre = new Image(); pre.src = 'assets/fig/inclusion_stress_r' + r + '.webp'; });
+    var src = function (r, k) { return 'assets/fig/inclusion_r' + r + '_' + k + '.webp'; };
+    var preloaded = false;
+    var preload = function () {
+      if (preloaded) return;
+      preloaded = true;
+      [2, 5].forEach(function (r) { imgs.forEach(function (im) { new Image().src = src(r, im.getAttribute('data-k')); }); });
+    };
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (es) { if (es.some(function (e) { return e.isIntersecting; })) { preload(); io.disconnect(); } }, { rootMargin: '600px' });
+      io.observe(fig);
+    } else preload();
     tabs.forEach(function (b, n) {
       b.addEventListener('click', function () {
         var r = b.getAttribute('data-r');
         tabs.forEach(function (o) { o.setAttribute('aria-selected', o === b ? 'true' : 'false'); });
-        img.src = 'assets/fig/inclusion_stress_r' + r + '.webp';
-        ref.textContent = 'Fig. ' + figNo[r];
+        imgs.forEach(function (im) { im.src = src(r, im.getAttribute('data-k')); });
+        ref.textContent = 'Fig. ' + figNo[r] + ', rearranged';
       });
       b.addEventListener('keydown', function (e) {
         var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;

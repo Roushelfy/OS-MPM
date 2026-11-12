@@ -116,8 +116,8 @@
           <span class="view-label">Subdomains</span>
         </div>
         <div class="view">
-          <video autoplay muted loop playsinline preload="auto" width="1104" height="832" poster="assets/video/fold-stress-poster.jpg" aria-label="The same folding motion with every particle coloured by von Mises stress; the stress concentrates in the soft hinge as the plate folds.">
-            <source src="assets/video/fold-stress.mp4" type="video/mp4">
+          <video autoplay muted loop playsinline preload="auto" width="1104" height="832" poster="assets/video/fold-stress-field-poster.jpg" aria-label="The same folding motion drawn as a solid body whose surface is coloured by von Mises stress; the stress concentrates in the soft hinge as the plate folds.">
+            <source src="assets/video/fold-stress-field.mp4" type="video/mp4">
           </video>
           <span class="view-label">Von Mises stress</span>
         </div>
@@ -128,7 +128,7 @@
           <span class="key"><i class="c-fine"></i><span>Fine-domain particles and grid, h<sub>S</sub> = 1/120 m</span></span>
           <span class="key ramp"><span>Von Mises stress, 0</span><i class="c-stress"></i><span>250 Pa</span></span>
         </span>
-        <span>3D folding example of the paper: two stiff panels on a hinge a hundred times softer, folded through 90°. Both views show the same run. Stress is drawn on the fine particles where the fine domain is solved and on the coarse particles elsewhere.</span>
+        <span>3D folding example of the paper: two stiff panels on a hinge a hundred times softer, folded through 90°. Both views show the same run. The stress field is interpolated from the particles to the surface of the body and smoothed, using the fine particles where the fine domain is solved and the coarse particles elsewhere.</span>
       </figcaption>
     </figure>
 
@@ -367,24 +367,40 @@
     </article>
 
     <article class="result" id="inclusion">
-      <div class="two wide-right">
-        <div>
-          <h3>Stress fields match the single-domain solution</h3>
-          <p>In the same benchmark, OS-MPM differs from single-domain MPM by less than 1.5% in every stress component. The remaining error against the analytical solution sits on the inclusion boundary and is common to both solvers.</p>
-        </div>
-        <figure class="fig reveal" id="inc-fig">
-          <div class="tabbar">
-            <span>Stiffness ratio \(E_{\mathrm{in}}/E_{\mathrm{out}}\)</span>
-            <div class="tabs" role="tablist" aria-label="Stiffness ratio">
-              <button type="button" role="tab" aria-selected="true" data-r="1">1</button>
-              <button type="button" role="tab" aria-selected="false" data-r="2">2</button>
-              <button type="button" role="tab" aria-selected="false" data-r="5">5</button>
-            </div>
-          </div>
-          <div class="plate"><img class="zoomable" id="inc-img" src="assets/fig/inclusion_stress_r1.webp" width="2011" height="2499" alt="Stress fields of the elastic inclusion: dual-domain OS-MPM, single-domain reference, error against the analytical solution, and difference between the two solvers, for the three in-plane stress components." loading="lazy"></div>
-          <figcaption><b>Stress fields at \(h = 0.004\) m.</b> Rows: OS-MPM, single-domain reference, error against the analytical solution, difference between the two solvers. Columns: \(\sigma_{xx}\), \(\sigma_{yy}\), \(\sigma_{xy}\). <span class="ref" id="inc-ref">Fig. 12</span></figcaption>
-        </figure>
+      <h3>Stress fields match the single-domain solution</h3>
+      <div class="cols2">
+        <p>In the same benchmark, the two solvers give the same stress fields at the plotted scale. At 99% of the plotted points, OS-MPM differs from single-domain MPM by less than 1.5% of the peak stress, for all three stiffness ratios.</p>
+        <p>The error against the analytical solution is more than ten times larger. It sits in a narrow band on the inclusion boundary and is common to both solvers: it comes from a sharp material interface on a regular grid, not from the coupling.</p>
       </div>
+      <figure class="fig reveal" id="inc-fig">
+        <div class="tabbar">
+          <span>Stiffness ratio \(E_{\mathrm{in}}/E_{\mathrm{out}}\)</span>
+          <div class="tabs" role="tablist" aria-label="Stiffness ratio">
+            <button type="button" role="tab" aria-selected="true" data-r="1">1</button>
+            <button type="button" role="tab" aria-selected="false" data-r="2">2</button>
+            <button type="button" role="tab" aria-selected="false" data-r="5">5</button>
+          </div>
+        </div>
+        <div class="plate quad">
+          <div class="cell">
+            <h4>OS-MPM</h4>
+            <img class="zoomable" data-k="dual" src="assets/fig/inclusion_r1_dual.webp" width="1627" height="580" alt="OS-MPM stress fields of the elastic inclusion: the three in-plane stress components, with the inclusion, the coarse-domain hole and the fine-domain boundary drawn as circles." loading="lazy">
+          </div>
+          <div class="cell">
+            <h4>Single-domain MPM</h4>
+            <img class="zoomable" data-k="single" src="assets/fig/inclusion_r1_single.webp" width="1627" height="580" alt="Single-domain MPM stress fields of the same problem, on the same colour scale. They look the same as the OS-MPM fields." loading="lazy">
+          </div>
+          <div class="cell">
+            <h4>OS-MPM against the analytical solution</h4>
+            <img class="zoomable" data-k="err" src="assets/fig/inclusion_r1_err.webp" width="1627" height="580" alt="Relative error of OS-MPM against the analytical solution for the three stress components. The error is confined to a thin ring on the inclusion boundary." loading="lazy">
+          </div>
+          <div class="cell">
+            <h4>OS-MPM against single-domain MPM</h4>
+            <img class="zoomable" data-k="diff" src="assets/fig/inclusion_r1_diff.webp" width="1627" height="580" alt="Relative difference between OS-MPM and single-domain MPM for the three stress components, on a colour scale far smaller than that of the analytical error." loading="lazy">
+          </div>
+        </div>
+        <figcaption><b>Stress fields at \(h = 0.004\) m.</b> Errors and differences are percentages of the largest analytical value of each component, and their colour scales end at the 99th percentile. Solid circles: inclusion and coarse-domain hole. Dashed circle: fine-domain boundary. <span class="ref" id="inc-ref">Fig. 12, rearranged</span></figcaption>
+      </figure>
     </article>
 
     <article class="result" id="benchmarks">
