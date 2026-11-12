@@ -249,7 +249,7 @@
   function initTabs() {
     var fig = $('#inc-fig');
     if (!fig) return;
-    var img = $('#inc-img'), ref = $('#inc-ref'), yd = $('#yy-dual'), ys = $('#yy-single');
+    var img = $('#inc-img'), ref = $('#inc-ref');
     var figNo = { 1: 12, 2: 13, 5: 14 };
     var tabs = $$('[role="tab"]', fig);
     [1, 2, 5].forEach(function (r) { var pre = new Image(); pre.src = 'assets/fig/inclusion_stress_r' + r + '.webp'; });
@@ -259,8 +259,6 @@
         tabs.forEach(function (o) { o.setAttribute('aria-selected', o === b ? 'true' : 'false'); });
         img.src = 'assets/fig/inclusion_stress_r' + r + '.webp';
         ref.textContent = 'Fig. ' + figNo[r];
-        yd.src = 'assets/fig/inclusion_yy_dual_r' + r + '.svg';
-        ys.src = 'assets/fig/inclusion_yy_single_r' + r + '.svg';
       });
       b.addEventListener('keydown', function (e) {
         var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
@@ -272,19 +270,10 @@
   }
 
   /* ---------- inclusion: CPU time and speed-up ---------- */
-  // Fig. 16 of the paper (right column): total CPU seconds and center-strip relative L1 stress error (%).
+  // Fig. 16 of the paper, finest level: total CPU seconds and center-strip relative L1 stress error (%).
   var COST = [
-    { r: 1, h: '0.0161', u: 41.9, o: 78.9, eu: 15.3, eo: 27.3 },
-    { r: 1, h: '0.0120', u: 77.6, o: 85.3, eu: 10.4, eo: 18.1 },
-    { r: 1, h: '0.008', u: 317.3, o: 158.2, eu: 8.5, eo: 8.0 },
     { r: 1, h: '0.004', u: 4992.9, o: 756.4, eu: 4.5, eo: 4.7 },
-    { r: 2, h: '0.0161', u: 47.6, o: 121.6, eu: 17.6, eo: 38.1 },
-    { r: 2, h: '0.0120', u: 87.6, o: 141.8, eu: 13.3, eo: 25.4 },
-    { r: 2, h: '0.008', u: 379.4, o: 202.1, eu: 10.1, eo: 10.1 },
     { r: 2, h: '0.004', u: 5114.4, o: 559.3, eu: 6.1, eo: 6.2 },
-    { r: 5, h: '0.0161', u: 45.7, o: 329.4, eu: 30.4, eo: 54.6 },
-    { r: 5, h: '0.0120', u: 112.4, o: 318.2, eu: 24.5, eo: 39.1 },
-    { r: 5, h: '0.008', u: 475.3, o: 509.8, eu: 18.0, eo: 16.8 },
     { r: 5, h: '0.004', u: 5841.7, o: 1347.3, eu: 10.3, eo: 10.2 }
   ];
   function initSpeed() {
@@ -305,13 +294,6 @@
         '</div>' +
         '<div class="x">' + (c.u / c.o).toFixed(1) + '×<small>faster</small></div>';
       rows.appendChild(row);
-    });
-    var body = $('#speed-table tbody');
-    COST.forEach(function (c) {
-      var tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + c.r + '</td><td>' + c.h + '</td><td>' + fmt(c.u) + '</td><td>' + fmt(c.o) + '</td><td>' +
-        (c.u / c.o).toFixed(c.u / c.o < 1 ? 2 : 1) + '×</td><td>' + c.eu.toFixed(1) + '%</td><td>' + c.eo.toFixed(1) + '%</td>';
-      body.appendChild(tr);
     });
     function grow() { $$('.bar i', rows).forEach(function (b) { b.style.width = b.getAttribute('data-w') + '%'; }); }
     if (reduceMotion || !('IntersectionObserver' in window)) grow();
