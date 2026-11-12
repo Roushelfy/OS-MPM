@@ -450,7 +450,7 @@ sub, sup { line-height: 0; }
 @media (min-width: 981px) { .pair.hc { grid-template-columns: minmax(0, 2.25fr) minmax(0, 1fr); } }
 @media (max-width: 980px) { .trio { grid-template-columns: minmax(0, 1fr); } }
 .key.ramp i { width: 96px; height: 10px; border-radius: 3px; }
-.c-stress { background: linear-gradient(90deg, #e3d9c6, #f0c98f, #ec9a4d, #cf4b34, #8f1d2c, #4a0d1f); }
+.c-disp { background: linear-gradient(90deg, #30123b, #4454c3, #448ffe, #1fc9dd, #2aefa1, #7dff56, #c1f334, #f1cb3a, #fe932a, #ea4e0d, #be2102, #7a0403); }
 .media.duo .media-bar > span:last-child { flex-basis: 100%; }
 
 /* inclusion: full-width text above a two-by-two figure */
