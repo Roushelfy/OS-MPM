@@ -110,25 +110,25 @@
     <figure class="media duo reveal" id="hero-media">
       <div class="views">
         <div class="view">
-          <video autoplay muted loop playsinline preload="auto" width="1104" height="832" poster="assets/video/fold-particles-poster.jpg" aria-label="Animation of a plate folding by ninety degrees about a soft hinge, drawn as particles. Coarse-domain particles are slate and fine-domain particles are green; the two background grids are drawn behind.">
+          <video autoplay muted loop playsinline preload="auto" width="1104" height="832" poster="assets/video/fold-particles-poster.jpg" aria-label="Animation of a plate folding by ninety degrees about a soft hinge, drawn as the particles of the two subdomains. Coarse-domain particles are slate and fine-domain particles are green; the two background grids are drawn behind.">
             <source src="assets/video/fold-particles.mp4" type="video/mp4">
           </video>
-          <span class="view-label">What the solver sees</span>
+          <span class="view-label">Subdomains</span>
         </div>
         <div class="view">
-          <video autoplay muted loop playsinline preload="auto" width="1104" height="832" poster="assets/video/fold-solid-poster.jpg" aria-label="The same folding motion drawn as a solid body; the soft hinge is amber and the stiff panels are slate.">
-            <source src="assets/video/fold-solid.mp4" type="video/mp4">
+          <video autoplay muted loop playsinline preload="auto" width="1104" height="832" poster="assets/video/fold-stress-poster.jpg" aria-label="The same folding motion with every particle coloured by von Mises stress; the stress concentrates in the soft hinge as the plate folds.">
+            <source src="assets/video/fold-stress.mp4" type="video/mp4">
           </video>
-          <span class="view-label">The body it simulates</span>
+          <span class="view-label">Von Mises stress</span>
         </div>
       </div>
       <figcaption class="media-bar">
         <span class="legend">
           <span class="key"><i class="c-coarse"></i><span>Coarse-domain particles and grid, h<sub>B</sub> = 1/60 m</span></span>
           <span class="key"><i class="c-fine"></i><span>Fine-domain particles and grid, h<sub>S</sub> = 1/120 m</span></span>
-          <span class="key"><i class="c-hinge"></i><span>Soft hinge</span></span>
+          <span class="key ramp"><span>Von Mises stress, 0</span><i class="c-stress"></i><span>250 Pa</span></span>
         </span>
-        <span>3D folding example of the paper: final fold angle 90.22°, against 90.07° for a single-domain run at the fine spacing.</span>
+        <span>3D folding example of the paper: two stiff panels on a hinge a hundred times softer, folded through 90°. Both views show the same run. Stress is drawn on the fine particles where the fine domain is solved and on the coarse particles elsewhere.</span>
       </figcaption>
     </figure>
 
